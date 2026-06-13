@@ -115,6 +115,7 @@ crm_meetings_booked   (CRM is source of truth for outcomes)
 - `crm_booking_rate` = crm_meetings_booked / prospects_reached. End-to-end conversion. **This is the north star.**
 - `crm_positive_reply_rate` = crm_positive_replies / prospects_reached. Signal quality.
 - `reply_rate` = total_replies / prospects_reached. Deliverability proxy (to be refined).
+- `email_1_reply_rate` = replies_email_1 / email_1_sent. Reply rate on the opening (email 1) message only — computed client-side, there is no prebuilt MCP rate for it. Always rendered directly next to `reply_rate` (daily, weekly, and series tables) so the opener's pull can be read against the all-steps reply rate. Exploratory metric — looking for inferences between opener engagement and the overall funnel.
 
 
 ## Dimensions that matter
@@ -181,14 +182,15 @@ Each section below defines exactly what to query and how to display it. When bui
 
 ##### Sub-section A: Daily Summary Table
 - **Query**:
-  - Metrics: `prospects_reached,total_emails_sent,total_replies,crm_positive_replies,crm_meetings_booked,reply_rate,crm_positive_reply_rate`
+  - Metrics: `prospects_reached,total_emails_sent,total_replies,email_1_sent,replies_email_1,crm_positive_replies,crm_meetings_booked,reply_rate,crm_positive_reply_rate`
   - Granularity: `daily`
   - Client IDs: `108917,82914,51431,33748`
   - Dates: last 16 days through yesterday
   - Date mode: `activity`
 - **Display**:
   - 16 rows, **sorted most recent date at top**
-  - Columns: Date, Day, Prospects Reached, Emails Sent, Total Replies, Positive Replies (with inline bar chart), Meetings, Reply Rate, Positive Reply Rate
+  - Columns: Date, Day, Prospects Reached, Emails Sent, Total Replies, Positive Replies (with inline bar chart), Meetings, Reply Rate, Email 1 Reply Rate, Positive Reply Rate
+  - Email 1 Reply Rate = replies_email_1 / email_1_sent (computed client-side), placed directly next to Reply Rate
   - No booking rate column
   - Inline bar chart on the Positive Replies column (scaled to max day)
   - Weekends muted
@@ -213,7 +215,7 @@ Each section below defines exactly what to query and how to display it. When bui
 
 ##### Sub-section A: Week-over-Week Table (toggle: activity / cohort mode)
 - **Query (activity mode)**:
-  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
+  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,email_1_sent,replies_email_1,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
   - Granularity: `weekly`
   - Client IDs: `108917,82914,51431,33748`
   - Dates: last 6 complete weeks (Mon–Sun) + current partial week
@@ -225,7 +227,7 @@ Each section below defines exactly what to query and how to display it. When bui
           - Week ending ≤ 2026-04-12 → **exclude Mr. Prime entirely** (pre-transition Jeff volume). This was the gap that caused the May 2026 dashboard build to over-count Mar 30–Apr 5 and Apr 6–12 prospects by ~12k–13k each — query Mr. Prime separately for the week and subtract from the 4-client total.
           - Week of 2026-04-13 to 2026-04-19 (straddles transition) → **subtract only Mr. Prime's Apr 13–14 volume** (those two days were still Jeff; Apr 15–19 was MB). Pull a daily query for Mr. Prime alone over the week and subtract Apr 13–14.
           - Week of 2026-04-20 onward → **include Mr. Prime** (fully MB).
-        - **Apply adjustments to volume metrics only**: prospects_reached, total_emails_sent, total_replies, total_bounces. CRM outcomes (crm_positive_replies, crm_meetings_booked) are agency-attributed in the source of truth and do not need rewriting.
+        - **Apply adjustments to volume metrics only**: prospects_reached, total_emails_sent, total_replies, total_bounces, email_1_sent, replies_email_1. CRM outcomes (crm_positive_replies, crm_meetings_booked) are agency-attributed in the source of truth and do not need rewriting.
         - **Label adjusted weeks** in the rendered table with a small parenthetical: e.g. "(3 clients, no MrP)", "(MrP adj.)", "(Nexus joined Mar 30)", "(maturing)". The label must accurately reflect the math — do NOT label a row "no MrP" if the displayed number is the 4-client total.
         - See the "Historical client transitions" table at the top of this doc for canonical dates.
   - Date mode: `activity`
@@ -233,7 +235,7 @@ Each section below defines exactly what to query and how to display it. When bui
 - **Display**:
   - Toggle switch at top: Activity / Cohort. Swaps the entire table data.
   - Table with most recent week at top
-  - Columns: Week, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
+  - Columns: Week, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
   - Bounce Rate = total_bounces / prospects_reached (from API as `bounce_rate`, or compute client-side from counts)
   - `reply_to_crm_positive_rate` = crm_positive_replies / total_replies (from API as `reply_to_crm_positive_rate`, or compute client-side from counts). Caveat: numerator is agency-attributed while denominator is campaign-attributed, so the ratio is a directional signal of reply quality, not a precise per-client conversion.
   - Pos. Reply to Booking Rate = crm_meetings_booked / crm_positive_replies (calculated in HTML, not from API)
@@ -259,16 +261,18 @@ Each section below defines exactly what to query and how to display it. When bui
 
 ##### Sub-section C: Series Performance Table (activity mode)
 - **Query**:
-  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
+  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,email_1_sent,replies_email_1,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
   - Granularity: `weekly`
   - Client IDs: `108917,82914,51431,33748`
   - Group by: `series`
-  - Dates: last 4 complete weeks (pull all 4 individually to support the toggle buttons)
+  - Dates: current partial week + last 4 complete weeks (pull the current partial week and each complete week individually to support the toggle buttons)
   - Date mode: `activity`
 - **Display**:
-  - 4 toggle buttons: **Last 1 week** | **Last 2 weeks** | **Last 3 weeks** | **Last 4 weeks**
-  - Each button aggregates the selected number of recent weeks into one row per series
-  - Table columns: Series, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
+  - 5 toggle buttons: **Current week** | **Last 1 week** | **Last 2 weeks** | **Last 3 weeks** | **Last 4 weeks**
+    - **Current week** = the current partial week-to-date alone (Mon of this week through today), one row per series active this week. This is the primary view for series testing — it surfaces a newly-launched series the moment it starts sending, even mid-week (this is exactly why series 13 was invisible under the old "last 4 complete weeks" rule). Label the button/header "Current week (partial)" while the week is incomplete.
+    - **Last 1 / 2 / 3 / 4 weeks** each aggregate that many most-recent *complete* weeks (Mon–Sun) into one row per series. They do NOT include the current partial week.
+  - **Never gray, mute, or fade the current-week view** — it is the most important week. If partial, write "(partial)" in the label only; do not dim it. (See the global design rule.)
+  - Table columns: Series, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
   - Bounce Rate = total_bounces / prospects_reached (works correctly at series level — no CRM dependency)
   - `reply_to_crm_positive_rate` = crm_positive_replies / total_replies. Will read as 0 at series level until the EQU-290 series-CRM fix ships (numerator gets dropped). Same caveat as the other CRM-dependent columns below.
   - Pos. Reply to Booking Rate = crm_meetings_booked / crm_positive_replies (calculated in HTML)
@@ -295,7 +299,7 @@ Each section below defines exactly what to query and how to display it. When bui
 
 ##### Sub-section B: Combined Jeff Performance (last 4 weeks)
 - **Query**:
-  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
+  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,email_1_sent,replies_email_1,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
   - Granularity: `weekly`
   - Client IDs: `25946,25948,223329,340115`
   - Dates: last 4 complete weeks (Mon–Sun) + current partial week
@@ -303,7 +307,7 @@ Each section below defines exactly what to query and how to display it. When bui
 - **Display**:
   - All Jeff clients clubbed into one aggregate row per week (not individual client rows)
   - Most recent week at top
-  - Columns: Week, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
+  - Columns: Week, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
   - Bounce Rate = total_bounces / prospects_reached (from API as `bounce_rate`, or compute client-side from counts)
   - `reply_to_crm_positive_rate` = crm_positive_replies / total_replies (from API as `reply_to_crm_positive_rate`, or compute client-side from counts). Same agency-vs-campaign attribution caveat as in Section 3A — directional signal of reply quality, not precise per-client conversion.
   - Pos. Reply to Booking Rate = crm_meetings_booked / crm_positive_replies (calculated in HTML)
@@ -311,16 +315,16 @@ Each section below defines exactly what to query and how to display it. When bui
 
 ##### Sub-section C: Jeff Series Breakdown (activity mode)
 - **Query**:
-  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
+  - Metrics: `prospects_reached,total_emails_sent,total_replies,total_bounces,email_1_sent,replies_email_1,crm_positive_replies,crm_meetings_booked,reply_rate,bounce_rate,reply_to_crm_positive_rate,crm_positive_reply_rate,crm_booking_rate`
   - Granularity: `weekly`
   - Client IDs: `25946,25948,223329,340115`
   - Group by: `series`
-  - Dates: last 4 complete weeks
+  - Dates: current partial week + last 4 complete weeks
   - Date mode: `activity`
 - **Display**:
-  - 4 toggle buttons: **Last 1 week** | **Last 2 weeks** | **Last 3 weeks** | **Last 4 weeks** (aggregate selected weeks per series)
+  - 5 toggle buttons: **Current week** | **Last 1 week** | **Last 2 weeks** | **Last 3 weeks** | **Last 4 weeks** — **Current week** = the current partial week-to-date alone (label "(partial)" while incomplete, never grayed); **Last 1 / 2 / 3 / 4 weeks** each aggregate that many most-recent complete weeks per series and exclude the current partial week.
   - All Jeff clients combined — series 6 from AMZ Ads and series 6 from Riverguide merge into one "Series 6" row
-  - Columns: Series, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
+  - Columns: Series, Prospects, Emails, Bounce Rate, Replies, Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
   - Bounce Rate works correctly at series level (no CRM dependency).
   - `reply_to_crm_positive_rate`, Pos Rate, Booking Rate, Pos→Booking will read as 0 at series level until the EQU-290 series-CRM fix ships — numerators get dropped.
   - Sorted by booking rate descending
@@ -335,7 +339,10 @@ Each section below defines exactly what to query and how to display it. When bui
 - Tabs for navigation, goal banner always visible
 - Color coding: green = good/above target, red = bad/below target, amber = warning/watch
 - All numbers formatted with commas. Rates as percentages with 2 decimal places.
-- End each section with a callout highlighting the key insight or action item
+- **No narrative text on the dashboard.** Do NOT write commentary, insight callouts, per-section summary boxes, goal-pacing prose, "last updated / Wk N…" recap blocks, or any multi-sentence text blob. The dashboard shows DATA, not analysis. Allowed text is limited to: section/tab titles, short column and axis labels, and compact status badges (e.g. "60% OF GOAL · UNDER PACE"). Everything the reader needs should come from the numbers, bars, and color coding.
+  - This explicitly deletes: the goal-banner sub-text under each badge (the per-day breakdown sentences), the top-right "Last updated / Wk N…" recap paragraph, the green/dark insight boxes at the end of every section, and the small descriptive lines above the Funnel Diagnostic. Remove them all.
+  - The Funnel Diagnostic's own boxes (this-week rate vs 6-week-avg with color status) ARE data and stay. Only the prose lines around it go.
+- **Never gray, mute, fade, or dim the current week.** It is the single most important column/row on the dashboard. When it is partial, indicate that with a "(partial)" label only — never with reduced opacity or a muted style. (Day-level weekend muting in the daily table is unaffected — that still applies to weekend *days*.)
 
 ## Spot Checks
 
