@@ -180,16 +180,18 @@ Each section below defines exactly what to query and how to display it. When bui
   - Progress bar under positive replies showing progress toward 100/week goal
   - Status badge on each: ahead (green) / on pace (amber) / behind (red) based on where the count stands relative to the day of the week
 
-#### Section 2: Daily Trend (tab, MerchantBots, activity mode only)
+#### Section 2: Daily Trend (tab, MerchantBots)
 
-##### Sub-section A: Daily Summary Table
-- **Query**:
+##### Sub-section A: Daily Summary Table (toggle: activity / cohort mode)
+- **Query (activity mode)**:
   - Metrics: `prospects_reached,total_emails_sent,genuine_replies,email_1_sent,genuine_replies_email_1,crm_positive_replies,crm_meetings_booked,genuine_reply_rate`
   - Granularity: `daily`
   - Client IDs: `108917,82914,51431,33748`
   - Dates: last 16 days through yesterday
   - Date mode: `activity`
+- **Query (cohort mode)**: same parameters but `date_mode=cohort` — buckets positive replies and meetings by each lead's email_1 send date (conversion-by-send-cohort). Days with no email_1 sends (e.g. weekends) return no row; render them as zero-value rows so the 16-day axis stays continuous.
 - **Display**:
+  - Toggle switch at top: Activity / Cohort. Swaps the entire table data. Label clearly which mode is active.
   - 16 rows, **sorted most recent date at top**
   - Columns: Date, Day, Prospects Reached, Emails Sent, Genuine Replies, Positive Replies (with inline bar chart), Meetings, Genuine Reply Rate, Email 1 Reply Rate, Positive Reply Rate
   - Positive Reply Rate = `crm_positive_reply_rate` (crm_positive_replies / prospects_reached), computed client-side from counts
@@ -269,23 +271,23 @@ Each section below defines exactly what to query and how to display it. When bui
   - Metrics: `prospects_reached,total_emails_sent,genuine_replies,smtp_bounces,email_1_sent,genuine_replies_email_1,crm_positive_replies,crm_meetings_booked,genuine_reply_rate,smtp_bounce_rate,reply_to_crm_positive_rate`
   - Granularity: `weekly`
   - Client IDs: `108917,82914,51431,33748`
-  - Group by: `series`
+  - Group by: `series,sub_series` — one row per series + sub-series combination (e.g. 6C, 6E, 11B, 11C). Grouping by `sub_series` alone is wrong: it merges the same letter across different series (6C and 11C collapse into one "C"). The combined grain keeps series identity while splitting each series into its active sub-series.
   - Dates: current partial week + last 4 complete weeks (pull the current partial week and each complete week individually to support the toggle buttons)
   - Date mode: `activity`
 - **Display**:
   - 5 toggle buttons: **Current week** | **Last 1 week** | **Last 2 weeks** | **Last 3 weeks** | **Last 4 weeks**
-    - **Current week** = the current partial week-to-date alone (Mon of this week through today), one row per series active this week. This is the primary view for series testing — it surfaces a newly-launched series the moment it starts sending, even mid-week (this is exactly why series 13 was invisible under the old "last 4 complete weeks" rule). Label the button/header "Current week (partial)" while the week is incomplete.
-    - **Last 1 / 2 / 3 / 4 weeks** each aggregate that many most-recent *complete* weeks (Mon–Sun) into one row per series. They do NOT include the current partial week.
+    - **Current week** = the current partial week-to-date alone (Mon of this week through today), one row per series + sub-series active this week. This is the primary view for series testing — it surfaces a newly-launched series the moment it starts sending, even mid-week (this is exactly why series 13 was invisible under the old "last 4 complete weeks" rule). Label the button/header "Current week (partial)" while the week is incomplete.
+    - **Last 1 / 2 / 3 / 4 weeks** each aggregate that many most-recent *complete* weeks (Mon–Sun) into one row per series + sub-series. They do NOT include the current partial week.
   - **Never gray, mute, or fade the current-week view** — it is the most important week. If partial, write "(partial)" in the label only; do not dim it. (See the global design rule.)
-  - Table columns: Series, Prospects, Emails, Bounce Rate, Genuine Replies, Genuine Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
-  - Bounce Rate = smtp_bounces / prospects_reached (works correctly at series level — no CRM dependency)
+  - Table columns: Series · Sub-series (label each row by its combined identity, e.g. "11B"), Prospects, Emails, Bounce Rate, Genuine Replies, Genuine Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
+  - Bounce Rate = smtp_bounces / prospects_reached (works correctly at series + sub-series level — no CRM dependency)
   - Pos. Reply Rate = `crm_positive_reply_rate` (crm_positive_replies / prospects_reached); Booking Rate = `crm_booking_rate` (crm_meetings_booked / prospects_reached) — both computed client-side from counts
   - `reply_to_crm_positive_rate` = crm_positive_replies / genuine_replies. Same agency-vs-campaign attribution caveat as Section 3A — directional signal of reply quality, not a precise per-client conversion.
   - Pos. Reply to Booking Rate = crm_meetings_booked / crm_positive_replies (calculated in HTML)
   - Sorted by booking rate descending
-  - **All series rendered in full white** — do NOT fade out series with 0 meetings. Every series stays equally readable so the user can see zero-meeting performance side-by-side with high performers.
-  - **Use CRM metrics** (`crm_positive_replies`, `crm_meetings_booked`) — they populate correctly at series level.
-- **Business question answered**: "Which series should I scale this week? Is the performance real or a fluke?"
+  - **All rows rendered in full white** — do NOT fade out series/sub-series with 0 meetings. Every row stays equally readable so the user can see zero-meeting performance side-by-side with high performers.
+  - **Use CRM metrics** (`crm_positive_replies`, `crm_meetings_booked`) — they populate correctly at series + sub-series level.
+- **Business question answered**: "Which series/sub-series should I scale this week? Is the performance real or a fluke?"
 
 #### Section 4: Jeff Clients (tab, activity mode only)
 
