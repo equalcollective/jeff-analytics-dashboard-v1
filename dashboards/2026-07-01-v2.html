@@ -151,7 +151,11 @@ tr.anchor.highlight td { background:rgba(34,197,94,0.18); font-weight:600; }
   <!-- 2A: Daily Summary -->
   <div class="card">
     <h2>Daily Summary (Jun 15 &ndash; Jun 30)</h2>
-    <div style="overflow-x:auto;">
+    <div class="toggle-group" id="daily-toggle">
+      <button class="toggle-btn active" onclick="toggleDailyMode('activity',this)">Activity Mode</button>
+      <button class="toggle-btn" onclick="toggleDailyMode('cohort',this)">Cohort Mode</button>
+    </div>
+    <div id="daily-activity-table" style="overflow-x:auto;">
     <table>
       <thead>
         <tr>
@@ -175,6 +179,34 @@ tr.anchor.highlight td { background:rgba(34,197,94,0.18); font-weight:600; }
         <tr class="highlight"><td>Jun 17</td><td>Wed</td><td class="r">2,766</td><td class="r">4,980</td><td class="r">96</td><td class="r">21 <span class="inline-bar" style="width:60px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">7</td><td class="r" style="color:var(--green);">3.47%</td><td class="r" style="color:var(--green);">2.31%</td><td class="r" style="color:var(--green);font-weight:700;">0.759%</td></tr>
         <tr class="highlight"><td>Jun 16</td><td>Tue</td><td class="r">3,439</td><td class="r">6,389</td><td class="r">106</td><td class="r">25 <span class="inline-bar" style="width:71px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">9</td><td class="r" style="color:var(--green);">3.08%</td><td class="r">1.86%</td><td class="r" style="color:var(--green);font-weight:700;">0.727%</td></tr>
         <tr class="highlight"><td>Jun 15</td><td>Mon</td><td class="r">2,787</td><td class="r">6,900</td><td class="r">88</td><td class="r">18 <span class="inline-bar" style="width:51px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">3</td><td class="r" style="color:var(--green);">3.16%</td><td class="r">1.83%</td><td class="r" style="color:var(--green);font-weight:700;">0.646%</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div id="daily-cohort-table" style="display:none;overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Date (Cohort)</th><th>Day</th><th class="r">Prospects</th><th class="r">Emails</th><th class="r">Genuine Replies</th><th class="r">Positive</th><th class="r">Meetings</th><th class="r">Genuine Reply Rate</th><th class="r">E1 Reply Rate</th><th class="r">Pos Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="anchor"><td>Jun 30</td><td>Tue</td><td class="r">795</td><td class="r">795</td><td class="r">9</td><td class="r">0</td><td class="r">0</td><td class="r" style="color:var(--red);">1.13%</td><td class="r" style="color:var(--red);">1.13%</td><td class="r" style="color:var(--red);">0.000%</td></tr>
+        <tr><td>Jun 29</td><td>Mon</td><td class="r">3,801</td><td class="r">6,859</td><td class="r">83</td><td class="r">12 <span class="inline-bar" style="width:34px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">5</td><td class="r">2.18%</td><td class="r">1.79%</td><td class="r" style="color:var(--green);">0.316%</td></tr>
+        <tr class="weekend"><td>Jun 28</td><td>Sun</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr>
+        <tr class="weekend"><td>Jun 27</td><td>Sat</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr>
+        <tr><td>Jun 26</td><td>Fri</td><td class="r">2,965</td><td class="r">5,440</td><td class="r">56</td><td class="r">10 <span class="inline-bar" style="width:28px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">1</td><td class="r">1.89%</td><td class="r" style="color:var(--red);">1.48%</td><td class="r" style="color:var(--green);">0.337%</td></tr>
+        <tr><td>Jun 25</td><td>Thu</td><td class="r">4,409</td><td class="r">8,238</td><td class="r">76</td><td class="r">8 <span class="inline-bar" style="width:23px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">4</td><td class="r" style="color:var(--red);">1.72%</td><td class="r" style="color:var(--red);">1.34%</td><td class="r">0.181%</td></tr>
+        <tr><td>Jun 24</td><td>Wed</td><td class="r">3,278</td><td class="r">4,171</td><td class="r">56</td><td class="r">4 <span class="inline-bar" style="width:11px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">1</td><td class="r" style="color:var(--red);">1.71%</td><td class="r" style="color:var(--red);">1.68%</td><td class="r" style="color:var(--red);">0.122%</td></tr>
+        <tr><td>Jun 23</td><td>Tue</td><td class="r">2,183</td><td class="r">3,271</td><td class="r">57</td><td class="r">7 <span class="inline-bar" style="width:20px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">1</td><td class="r" style="color:var(--green);">2.61%</td><td class="r" style="color:var(--green);">2.11%</td><td class="r" style="color:var(--green);">0.321%</td></tr>
+        <tr><td>Jun 22</td><td>Mon</td><td class="r">2,731</td><td class="r">4,201</td><td class="r">72</td><td class="r">8 <span class="inline-bar" style="width:23px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">2</td><td class="r" style="color:var(--green);">2.64%</td><td class="r" style="color:var(--green);">2.42%</td><td class="r">0.293%</td></tr>
+        <tr class="weekend"><td>Jun 21</td><td>Sun</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr>
+        <tr class="weekend"><td>Jun 20</td><td>Sat</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">0</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr>
+        <tr><td>Jun 19</td><td>Fri</td><td class="r">3,568</td><td class="r">5,220</td><td class="r">72</td><td class="r">7 <span class="inline-bar" style="width:20px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">1</td><td class="r">2.02%</td><td class="r">1.79%</td><td class="r">0.196%</td></tr>
+        <tr><td>Jun 18</td><td>Thu</td><td class="r">4,030</td><td class="r">6,718</td><td class="r">102</td><td class="r">9 <span class="inline-bar" style="width:26px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">4</td><td class="r" style="color:var(--green);">2.53%</td><td class="r" style="color:var(--green);">2.23%</td><td class="r">0.223%</td></tr>
+        <tr><td>Jun 17</td><td>Wed</td><td class="r">2,766</td><td class="r">4,826</td><td class="r">66</td><td class="r">5 <span class="inline-bar" style="width:14px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">3</td><td class="r">2.39%</td><td class="r">1.99%</td><td class="r">0.181%</td></tr>
+        <tr class="highlight"><td>Jun 16</td><td>Tue</td><td class="r">3,439</td><td class="r">6,143</td><td class="r">73</td><td class="r">24 <span class="inline-bar" style="width:68px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">7</td><td class="r">2.12%</td><td class="r">1.74%</td><td class="r" style="color:var(--green);font-weight:700;">0.698%</td></tr>
+        <tr class="highlight"><td>Jun 15</td><td>Mon</td><td class="r">2,787</td><td class="r">4,906</td><td class="r">76</td><td class="r">16 <span class="inline-bar" style="width:45px;"></span></td><td class="r" style="color:var(--green);font-weight:700;">6</td><td class="r" style="color:var(--green);">2.73%</td><td class="r">1.97%</td><td class="r" style="color:var(--green);font-weight:700;">0.574%</td></tr>
       </tbody>
     </table>
     </div>
@@ -401,6 +433,13 @@ function switchTab(name, btn) {
 function toggleWowMode(mode, btn) {
   document.getElementById('wow-activity-table').style.display = mode === 'activity' ? '' : 'none';
   document.getElementById('wow-cohort-table').style.display = mode === 'cohort' ? '' : 'none';
+  btn.parentElement.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+function toggleDailyMode(mode, btn) {
+  document.getElementById('daily-activity-table').style.display = mode === 'activity' ? '' : 'none';
+  document.getElementById('daily-cohort-table').style.display = mode === 'cohort' ? '' : 'none';
   btn.parentElement.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
 }
