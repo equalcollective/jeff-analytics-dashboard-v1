@@ -148,7 +148,7 @@ crm_meetings_booked   (CRM is source of truth for outcomes)
 
 ### Update process ("update dashboard")
 1. Pull fresh data from MCP for all sections per the specs below.
-2. Overwrite `dashboard.html` with the new data.
+2. Overwrite `dashboard.html` with the new data. The rendered file must contain **exactly** the sections and sub-sections defined in these specs and nothing else — if `dashboard.html` still carries a section that has since been removed from the spec (e.g. a deleted Jeff sub-section like "This Week at a Glance" or "Jeff Series Breakdown"), **delete it**. Never carry a stale section forward just because it was in the previous build.
 3. Save an identical copy in `dashboards/` named `YYYY-MM-DD-HHMM.html` with the build's IST date and 24-hour IST time.
 4. Git add, commit, and push to `origin/main`.
 5. GitHub Pages auto-deploys within ~1 minute. Team refreshes to see new data.
@@ -257,7 +257,7 @@ Each section below defines exactly what to query and how to display it. When bui
     - Interactive legend: each series is a chip that toggles its line on/off. Each chip also shows the series' real min–max range over the window for magnitude context (e.g. "Booking Rate 0.031%–0.149%").
   - **Chart 2 — Bar chart (absolute counts):**
     - Series: Prospects Reached, Genuine Replies, Bounces (smtp_bounces), CRM Positive Replies, Meetings Booked.
-    - Grouped bars per week on a log-scale y-axis (counts span ~15,000 down to ~15, so a linear axis buries the small series; log keeps all visible at once). Do NOT stack — these are funnel subsets (positives ⊂ replies ⊂ prospects), not additive parts, so a stack would imply a false sum.
+    - Grouped bars per week. The **y-axis rescales to the currently visible (toggled-on) series** and is recomputed every time a series is toggled — so viewing a single metric (or a few of comparable magnitude) zooms the axis to their range and makes the week-to-week trend clearly visible. Default to a **linear** y-axis from 0 to the visible max (this is the trend-reading case, and it's what most views are); switch to a **log** y-axis only when the visible series span more than ~2 orders of magnitude at once (e.g. Prospects + Meetings shown together, ~15,000 vs ~15). Do NOT use a fixed full-funnel axis — that is what made a single toggled series look flat. Do NOT stack — these are funnel subsets (positives ⊂ replies ⊂ prospects), not additive parts, so a stack would imply a false sum.
     - Interactive legend toggles each series on/off; hover shows the true count.
   - Both charts follow the Activity / Cohort toggle above (same data source as sub-section A, rendered differently).
 - **Business question answered**: "How are the funnel rates and volumes trending week over week — which are climbing or sliding?"
