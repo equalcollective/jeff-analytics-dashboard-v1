@@ -131,7 +131,7 @@ crm_meetings_booked   (CRM is source of truth for outcomes)
 
 ## How to work with the user
 
-- **`git pull` before any local edit.** The daily dashboard routine pushes `dashboard.html` and `dashboards/YYYY-MM-DD-vN.html` to GitHub on its own schedule, so the local clone is often behind. Pull first to avoid stale edits and merge conflicts. (This applies to local Claude Code sessions only — the cloud routine works in a fresh clone and can skip this.)
+- **`git pull` before any local edit.** The daily dashboard routine pushes `dashboard.html` and `dashboards/YYYY-MM-DD-HHMM.html` to GitHub on its own schedule, so the local clone is often behind. Pull first to avoid stale edits and merge conflicts. (This applies to local Claude Code sessions only — the cloud routine works in a fresh clone and can skip this.)
 - **Run the query first, then talk.** Don't ask permission for read-only queries. Just pull the data.
 - **Surface anomalies unprompted.** If one series is 10x others, say so even if not asked.
 - **Always contrast.** Every number is meaningless without a comparison — vs. last week, vs. other series, vs. goal.
@@ -144,12 +144,12 @@ crm_meetings_booked   (CRM is source of truth for outcomes)
 - **GitHub repo**: `equalcollective/jeff-analytics-dashboard-v1` (public)
 - **Team URL**: `https://equalcollective.github.io/jeff-analytics-dashboard-v1/dashboard.html`
 - **Permanent file**: `dashboard.html` at the repo root — this is what the team sees. Always overwrite this file with the latest data.
-- **Archive**: `dashboards/YYYY-MM-DD-vN.html` — dated snapshot copy. Create one each time the dashboard is updated.
+- **Archive**: `dashboards/YYYY-MM-DD-HHMM.html` — snapshot copy, named with the build's IST date and 24-hour IST time (e.g. `dashboards/2026-07-16-1545.html`). Create one each time the dashboard is updated; the routine runs several times a day, so the time in the filename keeps each run distinct.
 
 ### Update process ("update dashboard")
 1. Pull fresh data from MCP for all sections per the specs below.
 2. Overwrite `dashboard.html` with the new data.
-3. Save an identical copy in `dashboards/` with today's date and version.
+3. Save an identical copy in `dashboards/` named `YYYY-MM-DD-HHMM.html` with the build's IST date and 24-hour IST time.
 4. Git add, commit, and push to `origin/main`.
 5. GitHub Pages auto-deploys within ~1 minute. Team refreshes to see new data.
 
@@ -330,8 +330,9 @@ Each section below defines exactly what to query and how to display it. When bui
 - Color coding: green = good/above target, red = bad/below target, amber = warning/watch
 - All numbers formatted with commas. Rates as percentages with 2 decimal places.
 - **No narrative text on the dashboard.** Do NOT write commentary, insight callouts, per-section summary boxes, goal-pacing prose, "last updated / Wk N…" recap blocks, or any multi-sentence text blob. The dashboard shows DATA, not analysis. Allowed text is limited to: section/tab titles, short column and axis labels, and compact status badges (e.g. "60% OF GOAL · UNDER PACE"). Everything the reader needs should come from the numbers, bars, and color coding.
-  - This explicitly deletes: the goal-banner sub-text under each badge (the per-day breakdown sentences), the top-right "Last updated / Wk N…" recap paragraph, the green/dark insight boxes at the end of every section, and the small descriptive lines above the Funnel Diagnostic. Remove them all.
+  - This explicitly deletes: the goal-banner sub-text under each badge (the per-day breakdown sentences), the top-right "Last updated / Wk N…" recap paragraph (the compact "Updated … IST" timestamp badge stays — see the "Updated at" badge rule below), the green/dark insight boxes at the end of every section, and the small descriptive lines above the Funnel Diagnostic. Remove them all.
   - The Funnel Diagnostic's own boxes (this-week rate vs 6-week-avg with color status) ARE data and stay. Only the prose lines around it go.
+- **"Updated at" badge.** A compact badge, top-right, showing the build timestamp as date + 12-hour time in IST: `Updated D Mon YYYY, h:mm AM/PM IST` (e.g. `Updated 16 Jul 2026, 3:45 PM IST`). The cloud routine runs in UTC — convert to Asia/Kolkata (UTC+5:30) and always label `IST`. This compact badge is a status label and is allowed — it is NOT the banned narrative "Last updated / Wk N…" recap.
 - **Never gray, mute, fade, or dim the current week.** It is the single most important column/row on the dashboard. When it is partial, indicate that with a "(partial)" label only — never with reduced opacity or a muted style. (Day-level weekend muting in the daily table is unaffected — that still applies to weekend *days*.)
 
 ## Spot Checks
