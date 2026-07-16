@@ -6,10 +6,12 @@ This folder serves two dashboards:
 
 1. **Analytics dashboard** (`dashboard.html`) — sales funnel, goal pacing, week-over-week, series performance. Powered by the Smartlead MCP. **This is the default.** Specs live in this file (Section: "Dashboard").
 2. **Deliverability dashboard** (`deliverability.html`) — bounce-pattern tracking (A / B / C) for EQU-328 RCA. Powered by a direct Postgres query. Specs live in [`deliverability.md`](deliverability.md).
+3. **Monthly Analytics dashboard** (`monthly.html`) — month-over-month funnel, monthly goal pacing, MoM change chips, funnel diagnostic. Powered by the Smartlead MCP. Low-frequency companion to dashboard #1. Specs live in [`monthly.md`](monthly.md).
 
 Routing rules:
 - **"update dashboard"** (default) → update the analytics dashboard using the specs below.
 - **"update deliverability dashboard"** (or any phrase containing "deliverability") → follow [`deliverability.md`](deliverability.md) instead. Do not touch `dashboard.html`.
+- **"update the Monthly Analytics dashboard"** (or any phrase containing "monthly") → follow [`monthly.md`](monthly.md) instead. Do not touch `dashboard.html` or `deliverability.html`.
 
 `deliverability.md`, `queries/`, and `.env*` are gitignored — they contain a DB credential and internal client IDs. Never `git add` them.
 
@@ -52,14 +54,15 @@ For analyses that span the transition dates, attribute volume per the client's s
 
 **MerchantBots series:**
 
-- **Active:** 6, 10, 11
+- **Active:** 6, 10, 11, 13
 - **Paused (historical, still in data):** 15 — launched as MB, later paused. Include for retrospective analyses, exclude from "current MB series" filters.
+- **Series 13** — outreach to leads already existing in a CRM.
 
 When attributing infrastructure-partner sends to MB pre-transition (or as a sanity check), filter to series IN (6, 10, 11, 15) AND respect the transition date — Series 6 was also used by Nexus/Mr. Prime for Jeff customers before they migrated, so series alone is not sufficient.
 
 When a series transitions: append to the lists above with the date. A new series launched as a replacement (e.g. Series 21 replacing Series 10) → mark predecessor as paused rather than removing it from the data list.
 
-DTC Retail (82914) and Equal Collective (108917) have always been MerchantBots — no transition handling needed. All other clients (AMZ Ads, Riverguide, Accelo Brand, The Alfi) have always been Jeff and have not transitioned.
+DTC Retail (82914) and Equal Collective (108917) have always been MerchantBots — no transition handling needed. All other clients (AMZ Ads, Riverguide, Accelo Brand) have always been Jeff and have not transitioned.
 
 ### Jeff clients (secondary tracking)
 
@@ -68,24 +71,13 @@ DTC Retail (82914) and Equal Collective (108917) have always been MerchantBots �
 | AMZ Ads | 25946 | 3 meetings/week |
 | Riverguide | 25948 | 3 meetings/week |
 | Accelo Brand | 223329 | 3 meetings/week |
-| The Alfi | 340115 | 3 meetings/week |
 
-**Query filter for Jeff clients:** `client_id=25946,25948,223329,340115`
-
-### Excluded
-
-| Client | ID | Reason |
-|---|---|---|
-| Keywords | 223328 | Not a Jeff-analytics client, doing their own thing |
-
-### When the client list changes
-
-The user will inform Claude when clients are added, removed, or reclassified. Update the current-state table and add a row to the historical transitions table with the exact transition date. Never overwrite history — append.
+**Query filter for Jeff clients:** `client_id=25946,25948,223329`
 
 ## Goals
 
 - **MerchantBots: 30 meetings/week and 100 positive replies/week.** These are the primary goals. Goal pacing banner always shows both.
-- **Jeff clients: 3 meetings/week per client** (12 total across 4 clients). Secondary tracking in the Jeff Clients tab.
+- **Jeff clients: 3 meetings/week per client** (9 total across 3 clients). Secondary tracking in the Jeff Clients tab.
 
 ## MCP tools available
 
@@ -220,10 +212,10 @@ Each section below defines exactly what to query and how to display it. When bui
 
 ##### Sub-section A: Week-over-Week Table (toggle: activity / cohort mode)
 - **Query (activity mode)**:
-  - Metrics: `prospects_reached,total_emails_sent,genuine_replies,smtp_bounces,email_1_sent,genuine_replies_email_1,crm_positive_replies,crm_meetings_booked,genuine_reply_rate,smtp_bounce_rate,reply_to_crm_positive_rate`
+  - Metrics: `prospects_reached,unique_prospects_reached,total_emails_sent,genuine_replies,smtp_bounces,email_1_sent,genuine_replies_email_1,crm_positive_replies,crm_meetings_booked,genuine_reply_rate,smtp_bounce_rate,reply_to_crm_positive_rate`
   - Granularity: `weekly`
   - Client IDs: `108917,82914,51431,33748`
-  - Dates: last 6 complete weeks (Mon–Sun) + current partial week
+  - Dates: last 10 complete weeks (Mon–Sun) + current partial week
     - **Important — apply transition-date adjustments before displaying totals.** The client_id filter naively includes Nexus (51431) and Mr. Prime (33748) across the whole range, but they only became MerchantBots on 2026-03-30 (Nexus, clean Monday cutover) and 2026-04-15 (Mr. Prime, mid-week cutover). Three cases per client:
         - **Nexus (51431):**
           - Week ending ≤ 2026-03-29 → **exclude Nexus entirely** (pre-transition Jeff volume).
@@ -240,19 +232,41 @@ Each section below defines exactly what to query and how to display it. When bui
 - **Display**:
   - Toggle switch at top: Activity / Cohort. Swaps the entire table data.
   - Table with most recent week at top
-  - Columns: Week, Prospects, Emails, Bounce Rate, Genuine Replies, Genuine Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
+  - Columns: Week, Prospects, Unique Prospects, Emails, Bounce Rate, Genuine Replies, Genuine Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, Pos. Reply Rate (unique), `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
   - Bounce Rate = smtp_bounces / prospects_reached (from API as `smtp_bounce_rate`, or compute client-side from counts). System-detected SMTP bounce NDRs (reply_class='bounce'), not the rep-tagged category.
   - Pos. Reply Rate = `crm_positive_reply_rate` (crm_positive_replies / prospects_reached), computed client-side from counts
+  - Unique Prospects = `unique_prospects_reached` (distinct leads deduped on lead_id — non-additive, do not sum across weeks or group-bys)
+  - Pos. Reply Rate (unique) = crm_positive_replies / unique_prospects_reached, computed client-side from counts
   - Booking Rate = `crm_booking_rate` (crm_meetings_booked / prospects_reached), computed client-side from counts
   - `reply_to_crm_positive_rate` = crm_positive_replies / genuine_replies (from API as `reply_to_crm_positive_rate`, or compute client-side from counts). Caveat: numerator is agency-attributed while denominator is campaign-attributed, so the ratio is a directional signal of reply quality, not a precise per-client conversion.
   - Pos. Reply to Booking Rate = crm_meetings_booked / crm_positive_replies (calculated in HTML, not from API)
   - Label clearly which mode is active
 - **Saturday rule**: when building on a Saturday, treat the current Mon–Fri as the most recent week (it is complete for sending purposes)
 
-##### Sub-section B: Funnel Diagnostic (activity mode only)
-- **Query**: reuse activity mode data from sub-section A (most recent week + 6-week averages)
-- **Date mode**: `activity`
+##### Sub-section B: Trends (toggle: activity / cohort mode)
+- **Query (activity mode)**: reuse sub-section A's activity-mode data (10 complete weeks + current partial week) — no new query
+- **Query (cohort mode)**: reuse sub-section A's cohort-mode data (same window)
 - **Display**:
+  - Toggle switch at top: Activity / Cohort. Swaps the data feeding both charts. Label clearly which mode is active.
+  - Two charts stacked, both plotting the same weekly series sub-section A already pulls; weeks on the x-axis (oldest left, most recent right).
+  - **Chart 1 — Line chart (rate/metric trends, amplitude-normalized):**
+    - Series: Prospects Reached, Genuine Reply Rate, SMTP Bounce Rate, Pos. Reply Rate, Booking Rate.
+    - Each series is min–max normalized independently (amplitude scaling): rescaled to fill the chart height so a small-magnitude rate shows the same visual swing as prospects. This makes each line's trend-over-time legible. It is NOT a shared axis — do not read one line sitting higher than another as meaningful; only each line's own shape over time is.
+    - No numeric y-axis (the normalized values are synthetic) — label the axis "relative — hover for true value".
+    - Hover any point shows the TRUE underlying value in real units: counts with commas (Prospects); percentages for the four rates (Genuine Reply / SMTP Bounce to 2 dp, Pos. Reply / Booking to 3 dp).
+    - Interactive legend: each series is a chip that toggles its line on/off. Each chip also shows the series' real min–max range over the window for magnitude context (e.g. "Booking Rate 0.031%–0.149%").
+  - **Chart 2 — Bar chart (absolute counts):**
+    - Series: Prospects Reached, Genuine Replies, Bounces (smtp_bounces), CRM Positive Replies, Meetings Booked.
+    - Grouped bars per week on a log-scale y-axis (counts span ~15,000 down to ~15, so a linear axis buries the small series; log keeps all visible at once). Do NOT stack — these are funnel subsets (positives ⊂ replies ⊂ prospects), not additive parts, so a stack would imply a false sum.
+    - Interactive legend toggles each series on/off; hover shows the true count.
+  - Both charts follow the Activity / Cohort toggle above (same data source as sub-section A, rendered differently).
+- **Business question answered**: "How are the funnel rates and volumes trending week over week — which are climbing or sliding?"
+
+##### Sub-section C: Funnel Diagnostic (toggle: activity / cohort mode)
+- **Query (activity mode)**: reuse sub-section A's activity-mode data (most recent week + 6-week averages)
+- **Query (cohort mode)**: reuse sub-section A's cohort-mode data (most recent week + 6-week averages)
+- **Display**:
+  - Toggle switch at top: Activity / Cohort. Swaps the entire funnel data. Label clearly which mode is active.
   - Vertical funnel visualization (styled like the ICAP funnel image — colored boxes with arrows between them)
   - 4 steps top to bottom:
     1. **Prospects Reached** — this week's count vs 6-week avg count
@@ -266,7 +280,7 @@ Each section below defines exactly what to query and how to display it. When bui
   - Also show Pos. Reply to Booking Rate as a label between steps 3 and 4
 - **Business question answered**: "At a glance, where in the funnel did we win or lose this week?"
 
-##### Sub-section C: Series Performance Table (activity mode)
+##### Sub-section D: Series Performance Table (activity mode)
 - **Query**:
   - Metrics: `prospects_reached,total_emails_sent,genuine_replies,smtp_bounces,email_1_sent,genuine_replies_email_1,crm_positive_replies,crm_meetings_booked,genuine_reply_rate,smtp_bounce_rate,reply_to_crm_positive_rate`
   - Granularity: `weekly`
@@ -291,25 +305,11 @@ Each section below defines exactly what to query and how to display it. When bui
 
 #### Section 4: Jeff Clients (tab, activity mode only)
 
-##### Sub-section A: This Week at a Glance
-- **Query**:
-  - Metrics: `prospects_reached,crm_positive_replies,crm_meetings_booked`
-  - Granularity: `daily`
-  - Client IDs: `25946,25948,223329,340115`
-  - Group by: `client_id`
-  - Dates: current week Monday through today
-  - Date mode: `activity`
-- **Display**:
-  - Combined total at top: X / 12 meetings across all Jeff clients (progress bar)
-  - One card per client (AMZ Ads, Riverguide, Accelo Brand, The Alfi)
-  - Each card shows: meetings this week vs 3/week goal (progress bar), positive replies, prospects reached
-  - Green if >= 3 meetings, red if 0, amber otherwise
-
 ##### Sub-section B: Combined Jeff Performance (last 4 weeks)
 - **Query**:
   - Metrics: `prospects_reached,total_emails_sent,genuine_replies,smtp_bounces,email_1_sent,genuine_replies_email_1,crm_positive_replies,crm_meetings_booked,genuine_reply_rate,smtp_bounce_rate,reply_to_crm_positive_rate`
   - Granularity: `weekly`
-  - Client IDs: `25946,25948,223329,340115`
+  - Client IDs: `25946,25948,223329`
   - Dates: last 4 complete weeks (Mon–Sun) + current partial week
   - Date mode: `activity`
 - **Display**:
@@ -322,27 +322,6 @@ Each section below defines exactly what to query and how to display it. When bui
   - `reply_to_crm_positive_rate` = crm_positive_replies / genuine_replies (from API as `reply_to_crm_positive_rate`, or compute client-side from counts). Same agency-vs-campaign attribution caveat as in Section 3A — directional signal of reply quality, not precise per-client conversion.
   - Pos. Reply to Booking Rate = crm_meetings_booked / crm_positive_replies (calculated in HTML)
 - **Business question answered**: "How is the Jeff book of business performing overall week over week?"
-
-##### Sub-section C: Jeff Series Breakdown (activity mode)
-- **Query**:
-  - Metrics: `prospects_reached,total_emails_sent,genuine_replies,smtp_bounces,email_1_sent,genuine_replies_email_1,crm_positive_replies,crm_meetings_booked,genuine_reply_rate,smtp_bounce_rate,reply_to_crm_positive_rate`
-  - Granularity: `weekly`
-  - Client IDs: `25946,25948,223329,340115`
-  - Group by: `series`
-  - Dates: current partial week + last 4 complete weeks
-  - Date mode: `activity`
-- **Display**:
-  - 5 toggle buttons: **Current week** | **Last 1 week** | **Last 2 weeks** | **Last 3 weeks** | **Last 4 weeks** — **Current week** = the current partial week-to-date alone (label "(partial)" while incomplete, never grayed); **Last 1 / 2 / 3 / 4 weeks** each aggregate that many most-recent complete weeks per series and exclude the current partial week.
-  - All Jeff clients combined — series 6 from AMZ Ads and series 6 from Riverguide merge into one "Series 6" row
-  - Columns: Series, Prospects, Emails, Bounce Rate, Genuine Replies, Genuine Reply Rate, Email 1 Reply Rate, Positive Replies, Pos. Reply Rate, `reply_to_crm_positive_rate`, Meetings, Booking Rate, Pos. Reply to Booking Rate
-  - Bounce Rate = smtp_bounces / prospects_reached — works correctly at series level (no CRM dependency).
-  - Pos. Reply Rate = `crm_positive_reply_rate`; Booking Rate = `crm_booking_rate` — computed client-side from counts.
-  - `reply_to_crm_positive_rate` = crm_positive_replies / genuine_replies. Same agency-vs-campaign attribution caveat as Section 3A — directional signal, not a precise per-client conversion.
-  - Sorted by booking rate descending
-  - **All series rendered in full white** — do NOT fade out series with 0 meetings. Every series stays equally readable so zero-meeting performance sits side-by-side with high performers.
-  - **Use CRM metrics** (`crm_positive_replies`, `crm_meetings_booked`) — they populate correctly at series level.
-- **Business question answered**: "Which series is working across Jeff clients? Where should we shift volume?"
-
 
 ### Dashboard design rules
 - Dark theme (bg: #0f1117, cards: #1a1d27)
