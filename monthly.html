@@ -53,6 +53,21 @@ tr.anchor td{background:rgba(99,102,241,0.12);font-weight:600;}
 .funnel-red{background:rgba(239,68,68,0.15);border-color:var(--red)!important;}
 .placeholder{border:1px dashed var(--card-border);border-radius:10px;padding:32px;text-align:center;color:var(--text-muted);font-size:13px;}
 .tablewrap{overflow-x:auto;}
+.chart-block{margin-bottom:22px;}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.chart-sub{font-size:11px;color:var(--text-muted);margin-bottom:10px;}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible;}
+.chart-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.leg-chip{display:flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--card-border);border-radius:7px;font-size:11px;cursor:pointer;user-select:none;background:var(--bg);transition:opacity .15s;}
+.leg-chip .leg-dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+.leg-chip .leg-range{color:var(--text-muted);font-size:10px;}
+.leg-chip.off{opacity:0.38;}
+.leg-chip.off .leg-name{text-decoration:line-through;}
+.viz-tip{position:fixed;pointer-events:none;z-index:50;background:#0b0d13;border:1px solid var(--card-border);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,0.5);opacity:0;transition:opacity .1s;max-width:240px;}
+.viz-tip .tip-month{font-weight:600;margin-bottom:4px;}
+.viz-tip .tip-row{display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.viz-tip .tip-row .leg-dot{width:8px;height:8px;border-radius:2px;}
+.viz-tip .tip-val{margin-left:auto;font-variant-numeric:tabular-nums;}
 .footer{text-align:center;color:var(--text-muted);font-size:11px;padding:24px 0 8px;border-top:1px solid var(--card-border);margin-top:24px;}
 @media (max-width:900px){.goal-banner{grid-template-columns:1fr;}}
 </style>
@@ -107,6 +122,27 @@ tr.anchor td{background:rgba(99,102,241,0.12);font-weight:600;}
     <tr><td>May 2026</td><td class="r">65,878<div class="mom mom-down">▼ 30.1%</div></td><td class="r">48,565</td><td class="r">132,741</td><td class="r">8.22%</td><td class="r">1,919</td><td class="r">2.91%</td><td class="r">2.43%</td><td class="r">103<div class="mom mom-up">▲ 692.3%</div></td><td class="r">0.156%</td><td class="r">0.212%</td><td class="r">5.37%</td><td class="r">37<div class="mom mom-up">▲ 640.0%</div></td><td class="r">0.0562%<div class="mom mom-up">▲ 958.7%</div></td><td class="r">35.92%</td></tr>
     <tr><td>April 2026</td><td class="r">94,249</td><td class="r">66,812</td><td class="r">203,206</td><td class="r">11.06%</td><td class="r">2,225</td><td class="r">2.36%</td><td class="r">1.87%</td><td class="r">13</td><td class="r">0.014%</td><td class="r">0.019%</td><td class="r">0.58%</td><td class="r">5</td><td class="r">0.0053%</td><td class="r">38.46%</td></tr>
     </tbody></table>
+  </div>
+</div>
+
+<!-- TRENDS (Sub-section B) -->
+<div class="card" id="trends-card">
+  <h2>Trends</h2>
+  <div class="toggle-group" id="trend-toggle">
+    <button class="toggle-btn active" onclick="trendMode('activity',this)">Activity</button>
+    <button class="toggle-btn" onclick="trendMode('cohort',this)">Cohort</button>
+  </div>
+  <div class="chart-block">
+    <div class="chart-title">Rate &amp; volume trends <span style="color:var(--text-muted);font-weight:400;">— amplitude-normalized</span></div>
+    <div class="chart-sub">Each line rescaled to its own min–max; vertical position is NOT comparable across series — read each line's own shape. Relative — hover for true value.</div>
+    <svg id="line-svg" class="chart-svg" viewBox="0 0 760 300" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+    <div class="chart-legend" id="line-legend"></div>
+  </div>
+  <div class="chart-block">
+    <div class="chart-title">Absolute counts <span style="color:var(--text-muted);font-weight:400;">— log scale</span></div>
+    <div class="chart-sub">Funnel subsets (positives ⊂ replies ⊂ prospects), not additive — grouped, never stacked.</div>
+    <svg id="bar-svg" class="chart-svg" viewBox="0 0 760 320" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+    <div class="chart-legend" id="bar-legend"></div>
   </div>
 </div>
 
@@ -177,27 +213,92 @@ tr.anchor td{background:rgba(99,102,241,0.12);font-weight:600;}
 </div>
 </div>
 
-<!-- PLACEHOLDER: section from the other agent -->
-<div class="card">
-  <h2>Series Performance <span class="partial-tag">pending</span></h2>
-  <div class="placeholder">Reserved for the additional monthly section (in progress). Slots in here when ready.</div>
-</div>
-
 <div class="footer">MerchantBots Monthly Analytics &middot; MerchantBots clients (108917, 82914, 51431, 33748) &middot; April row adjusted for Mr. Prime pre-transition volume (Apr 1&ndash;14)</div>
 
 <script>
-function momMode(m,btn){
-  document.getElementById('mom-act').style.display = m==='act'?'block':'none';
-  document.getElementById('mom-coh').style.display = m==='coh'?'block':'none';
-  document.querySelectorAll('#mom-toggle .toggle-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+const TREND_DATA = {"months":["Apr","May","Jun","Jul"],"partial":[false,false,false,true],"activity":{"lines":{"Prospects Reached":{"vals":[94249,65878,66457,47710],"fmt":"count","color":"#3987e5"},"Genuine Reply Rate":{"vals":[0.022705811202240873,0.03075381766295273,0.026513384594549858,0.02712219660448543],"fmt":"pct2","color":"#008300"},"SMTP Bounce Rate":{"vals":[0.1095077931861346,0.08304745134946416,0.15306137803391667,0.034374345001047996],"fmt":"pct2","color":"#d55181"},"Pos. Reply Rate":{"vals":[0.002206919967320608,0.0021706791341570783,0.00370164166303023,0.0032068748690002096],"fmt":"pct3","color":"#c98500"},"Booking Rate":{"vals":[0.0007427134505405893,0.0006679012720483317,0.001158643935176129,0.0009641584573464682],"fmt":"pct3","color":"#199e70"}},"bars":{"Prospects Reached":{"vals":[94249,65878,66457,47710],"color":"#3987e5"},"Genuine Replies":{"vals":[2140,2026,1762,1294],"color":"#008300"},"Bounces":{"vals":[10321,5471,10172,1640],"color":"#d55181"},"CRM Positive Replies":{"vals":[208,143,246,153],"color":"#c98500"},"Meetings Booked":{"vals":[70,44,77,46],"color":"#199e70"}}},"cohort":{"lines":{"Prospects Reached":{"vals":[94249,65878,66457,47710],"fmt":"count","color":"#3987e5"},"Genuine Reply Rate":{"vals":[0.02360767753504016,0.029129603205926106,0.02607701220337963,0.02657723747642004],"fmt":"pct2","color":"#008300"},"SMTP Bounce Rate":{"vals":[0.110558202209042,0.08222775433376849,0.15199301804174128,0.033326346677845314],"fmt":"pct2","color":"#d55181"},"Pos. Reply Rate":{"vals":[0.000137932497957538,0.0015634961595676858,0.0037467836345305987,0.002955355271431566],"fmt":"pct3","color":"#c98500"},"Booking Rate":{"vals":[5.3050960752899236e-05,0.0005616442514951881,0.0011435966113426726,0.000796478725634039],"fmt":"pct3","color":"#199e70"}},"bars":{"Prospects Reached":{"vals":[94249,65878,66457,47710],"color":"#3987e5"},"Genuine Replies":{"vals":[2225,1919,1733,1268],"color":"#008300"},"Bounces":{"vals":[10420,5417,10101,1590],"color":"#d55181"},"CRM Positive Replies":{"vals":[13,103,249,141],"color":"#c98500"},"Meetings Booked":{"vals":[5,37,76,38],"color":"#199e70"}}}};
+
+let trendState = {mode:'activity', offLine:new Set(), offBar:new Set()};
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+const fmtCount=v=>Number(v).toLocaleString('en-US');
+const fmtVal=(v,f)=> f==='count'?fmtCount(v): f==='pct2'?(v*100).toFixed(2)+'%':(v*100).toFixed(3)+'%';
+const rangeLabel=(vals,f)=>fmtVal(Math.min(...vals),f)+'–'+fmtVal(Math.max(...vals),f);
+let tip;
+function showTip(html,x,y){ if(!tip){tip=document.createElement('div');tip.className='viz-tip';document.body.appendChild(tip);}
+  tip.innerHTML=html; tip.style.opacity='1'; const w=tip.offsetWidth,h=tip.offsetHeight;
+  let nx=x+14,ny=y+14; if(nx+w>window.innerWidth-8)nx=x-w-14; if(ny+h>window.innerHeight-8)ny=y-h-14;
+  tip.style.left=nx+'px'; tip.style.top=ny+'px'; }
+function hideTip(){ if(tip)tip.style.opacity='0'; }
+
+function renderLine(){
+  const svg=document.getElementById('line-svg'); svg.innerHTML='';
+  const data=TREND_DATA[trendState.mode].lines, months=TREND_DATA.months;
+  const W=760,H=300,padL=44,padR=16,padT=18,padB=34, plotW=W-padL-padR, plotH=H-padT-padB, n=months.length;
+  const X=i=> padL+(n===1?plotW/2:i*plotW/(n-1));
+  months.forEach((m,i)=> svg.appendChild(el('line',{x1:X(i),y1:padT,x2:X(i),y2:padT+plotH,stroke:BORDER,'stroke-width':'1',opacity:'0.45'})));
+  const names=Object.keys(data);
+  names.forEach(nm=>{ if(trendState.offLine.has(nm))return; const s=data[nm],vals=s.vals;
+    const mn=Math.min(...vals),mx=Math.max(...vals);
+    const Y=v=> mx===mn?padT+plotH/2:padT+(1-(v-mn)/(mx-mn))*plotH;
+    let d=''; vals.forEach((v,i)=> d+=(i?'L':'M')+X(i)+' '+Y(v));
+    svg.appendChild(el('path',{d,fill:'none',stroke:s.color,'stroke-width':'2','stroke-linejoin':'round','stroke-linecap':'round'}));
+    vals.forEach((v,i)=> svg.appendChild(el('circle',{cx:X(i),cy:Y(v),r:'4',fill:s.color,stroke:CARDC,'stroke-width':'1.5'})));
+  });
+  months.forEach((m,i)=>{ const bx=i===0?padL:(X(i-1)+X(i))/2, bx2=i===n-1?padL+plotW:(X(i)+X(i+1))/2;
+    const rect=el('rect',{x:bx,y:padT,width:Math.max(1,bx2-bx),height:plotH,fill:'transparent'});
+    rect.addEventListener('mousemove',ev=>{ let rows='';
+      names.forEach(nm=>{ if(trendState.offLine.has(nm))return; const s=data[nm];
+        rows+='<div class="tip-row"><span class="leg-dot" style="background:'+s.color+'"></span><span>'+nm+'</span><span class="tip-val">'+fmtVal(s.vals[i],s.fmt)+'</span></div>'; });
+      showTip('<div class="tip-month">'+months[i]+(TREND_DATA.partial[i]?' (partial)':'')+'</div>'+rows,ev.clientX,ev.clientY); });
+    rect.addEventListener('mouseleave',hideTip); svg.appendChild(rect); });
+  months.forEach((m,i)=>{ const t=el('text',{x:X(i),y:H-12,'text-anchor':'middle',fill:MUTED,'font-size':'11'}); t.textContent=m; svg.appendChild(t); });
+  const yl=el('text',{x:13,y:padT+plotH/2,fill:MUTED,'font-size':'10','text-anchor':'middle',transform:'rotate(-90 13 '+(padT+plotH/2)+')'}); yl.textContent='relative — hover for true value'; svg.appendChild(yl);
+  renderLegend('line-legend',data,trendState.offLine,true,renderLine);
 }
-function funMode(m,btn){
-  document.getElementById('funnel-act').style.display = m==='act'?'flex':'none';
-  document.getElementById('funnel-coh').style.display = m==='coh'?'flex':'none';
-  document.querySelectorAll('#fun-toggle .toggle-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+
+function renderBar(){
+  const svg=document.getElementById('bar-svg'); svg.innerHTML='';
+  const data=TREND_DATA[trendState.mode].bars, months=TREND_DATA.months, names=Object.keys(data);
+  const W=760,H=320,padL=52,padR=16,padT=16,padB=34, plotW=W-padL-padR, plotH=H-padT-padB, n=months.length;
+  let allv=[]; names.forEach(nm=> allv.push(...data[nm].vals.filter(v=>v>0)));
+  const dMax=Math.max(...allv), loMin=0, loMax=Math.log10(dMax*1.2);
+  const Y=v=> v<=0?padT+plotH:padT+(1-(Math.log10(v)-loMin)/(loMax-loMin))*plotH;
+  for(let p=0; Math.pow(10,p)<=dMax; p++){ const gv=Math.pow(10,p), y=Y(gv);
+    svg.appendChild(el('line',{x1:padL,y1:y,x2:padL+plotW,y2:y,stroke:BORDER,'stroke-width':'1',opacity:'0.5'}));
+    const t=el('text',{x:padL-8,y:y+3,'text-anchor':'end',fill:MUTED,'font-size':'10'}); t.textContent=fmtCount(gv); svg.appendChild(t); }
+  const slotW=plotW/n, activeNames=names.filter(nm=>!trendState.offBar.has(nm));
+  months.forEach((m,i)=>{ const cx=padL+i*slotW, groupW=slotW*0.68, gap=3, k=activeNames.length||1;
+    const bw=Math.max(3,(groupW-(k-1)*gap)/k), startX=cx+(slotW-groupW)/2;
+    activeNames.forEach((nm,j)=>{ const s=data[nm], v=s.vals[i], x=startX+j*(bw+gap), y=Y(v), h=Math.max(0,padT+plotH-y);
+      if(v>0){ const r=el('rect',{x:x,y:y,width:bw,height:h,rx:'3',fill:s.color});
+        r.addEventListener('mousemove',ev=> showTip('<div class="tip-month">'+m+(TREND_DATA.partial[i]?' (partial)':'')+'</div><div class="tip-row"><span class="leg-dot" style="background:'+s.color+'"></span><span>'+nm+'</span><span class="tip-val">'+fmtCount(v)+'</span></div>',ev.clientX,ev.clientY));
+        r.addEventListener('mouseleave',hideTip); svg.appendChild(r); } });
+    const t=el('text',{x:cx+slotW/2,y:H-12,'text-anchor':'middle',fill:MUTED,'font-size':'11'}); t.textContent=m; svg.appendChild(t); });
+  renderLegend('bar-legend',data,trendState.offBar,false,renderBar);
 }
+
+function renderLegend(id,data,offset,isLine,rerender){
+  const box=document.getElementById(id); box.innerHTML='';
+  Object.keys(data).forEach(nm=>{ const s=data[nm];
+    const chip=document.createElement('div'); chip.className='leg-chip'+(offset.has(nm)?' off':'');
+    const range='<span class="leg-range">'+rangeLabel(s.vals,isLine?s.fmt:'count')+'</span>';
+    chip.innerHTML='<span class="leg-dot" style="background:'+s.color+'"></span><span class="leg-name">'+nm+'</span>'+range;
+    chip.addEventListener('click',()=>{ if(offset.has(nm))offset.delete(nm); else offset.add(nm); rerender(); });
+    box.appendChild(chip); });
+}
+
+function trendMode(mode,btn){ trendState.mode=mode;
+  document.querySelectorAll('#trend-toggle .toggle-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  renderLine(); renderBar(); }
+function momMode(m,btn){ document.getElementById('mom-act').style.display=m==='act'?'block':'none';
+  document.getElementById('mom-coh').style.display=m==='coh'?'block':'none';
+  document.querySelectorAll('#mom-toggle .toggle-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function funMode(m,btn){ document.getElementById('funnel-act').style.display=m==='act'?'flex':'none';
+  document.getElementById('funnel-coh').style.display=m==='coh'?'flex':'none';
+  document.querySelectorAll('#fun-toggle .toggle-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+renderLine(); renderBar();
+
 </script>
 </body>
 </html>
