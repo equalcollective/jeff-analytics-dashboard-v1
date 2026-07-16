@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MerchantBots Monthly Analytics</title>
+<style>
+:root{--bg:#0f1117;--card:#1a1d27;--card-border:#2a2d3a;--text:#e4e4e7;--text-muted:#8b8d97;
+--accent:#6366f1;--green:#22c55e;--green-bg:rgba(34,197,94,0.12);--red:#ef4444;--red-bg:rgba(239,68,68,0.12);
+--amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);--blue:#3b82f6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);
+color:var(--text);line-height:1.5;padding:24px;max-width:1400px;margin:0 auto;}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+.header h1{font-size:24px;font-weight:700;}
+.header .subtitle{color:var(--text-muted);font-size:13px;margin-top:4px;}
+.last-updated{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text-muted);}
+.goal-banner{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:24px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.goal-item h3{font-size:13px;color:var(--text-muted);margin-bottom:6px;font-weight:500;}
+.goal-value{font-size:32px;font-weight:700;}
+.goal-value span{font-size:16px;color:var(--text-muted);font-weight:400;}
+.progress-bar{height:8px;background:#2a2d3a;border-radius:4px;margin:10px 0 8px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;transition:width 0.5s;}
+.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:0.3px;}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-amber{background:var(--amber-bg);color:var(--amber);}
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.card h2{font-size:16px;font-weight:600;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 10px;border-bottom:2px solid var(--card-border);color:var(--text-muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;}
+td{padding:8px 10px;border-bottom:1px solid var(--card-border);white-space:nowrap;}
+th.r,td.r{text-align:right;}
+tr:hover td{background:rgba(99,102,241,0.04);}
+tr.anchor td{background:rgba(99,102,241,0.12);font-weight:600;}
+.partial-tag{font-size:10px;color:var(--text-muted);font-weight:500;margin-left:6px;text-transform:uppercase;letter-spacing:0.4px;}
+.mom{font-size:10px;font-weight:600;margin-top:2px;}
+.mom-up{color:var(--green);}
+.mom-down{color:var(--red);}
+.toggle-group{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;}
+.toggle-btn{padding:6px 14px;border:1px solid var(--card-border);background:var(--card);color:var(--text-muted);font-size:12px;cursor:pointer;border-radius:6px;transition:all 0.2s;}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.funnel-diag{display:flex;flex-direction:column;align-items:center;gap:0;padding:20px;}
+.funnel-box{width:420px;max-width:100%;padding:14px 20px;border-radius:10px;text-align:center;border:1px solid rgba(255,255,255,0.1);}
+.funnel-box .step-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.funnel-box .step-value{font-size:22px;font-weight:700;}
+.funnel-box .step-compare{font-size:11px;margin-top:2px;color:var(--text-muted);}
+.funnel-box .step-status{font-size:11px;font-weight:600;margin-top:4px;}
+.funnel-arrow{font-size:18px;color:var(--text-muted);line-height:1;padding:6px 0;}
+.funnel-arrow .pos-book{font-size:11px;margin-left:8px;}
+.funnel-green{background:rgba(34,197,94,0.15);border-color:var(--green)!important;}
+.funnel-amber{background:rgba(245,158,11,0.15);border-color:var(--amber)!important;}
+.funnel-red{background:rgba(239,68,68,0.15);border-color:var(--red)!important;}
+.placeholder{border:1px dashed var(--card-border);border-radius:10px;padding:32px;text-align:center;color:var(--text-muted);font-size:13px;}
+.tablewrap{overflow-x:auto;}
+.footer{text-align:center;color:var(--text-muted);font-size:11px;padding:24px 0 8px;border-top:1px solid var(--card-border);margin-top:24px;}
+@media (max-width:900px){.goal-banner{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>MerchantBots Monthly Analytics</h1>
+    <div class="subtitle">Month-over-month outbound funnel &middot; MB goal 120 mtg &amp; 400 pos/month</div>
+  </div>
+  <div class="last-updated">As of Jul 16, 2026</div>
+</div>
+
+<!-- GOAL PACING (monthly) -->
+<div class="goal-banner">
+  <div class="goal-item">
+    <h3>Meetings &mdash; July 2026</h3>
+    <div class="goal-value">46 <span>/ 120 goal</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:38%;background:var(--red);"></div></div>
+    <span class="badge badge-red">38% OF GOAL &middot; DAY 16 OF 31 &middot; BEHIND PACE</span>
+  </div>
+  <div class="goal-item">
+    <h3>Positive Replies &mdash; July 2026</h3>
+    <div class="goal-value">153 <span>/ 400 goal</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:38%;background:var(--red);"></div></div>
+    <span class="badge badge-red">38% OF GOAL &middot; DAY 16 OF 31 &middot; BEHIND PACE</span>
+  </div>
+</div>
+
+<!-- MONTH-OVER-MONTH TABLE -->
+<div class="card">
+  <h2>Month-over-Month Performance</h2>
+  <div class="toggle-group" id="mom-toggle">
+    <button class="toggle-btn active" onclick="momMode('act',this)">Activity</button>
+    <button class="toggle-btn" onclick="momMode('coh',this)">Cohort</button>
+  </div>
+  <div class="tablewrap" id="mom-act">
+    <table><thead><tr><th>Month</th><th class="r">Prospects</th><th class="r">Unique</th><th class="r">Emails</th><th class="r">Bounce</th><th class="r">Gen Replies</th><th class="r">Gen RR</th><th class="r">E1 RR</th><th class="r">Pos Replies</th><th class="r">Pos RR</th><th class="r">Pos RR (uniq)</th><th class="r">Reply→Pos</th><th class="r">Meetings</th><th class="r">Booking</th><th class="r">Pos→Book</th></tr></thead>
+    <tbody>
+    <tr><td>July 2026<span class="partial-tag">partial</span></td><td class="r">47,710</td><td class="r">29,890</td><td class="r">77,915</td><td class="r">3.44%</td><td class="r">1,294</td><td class="r">2.71%</td><td class="r">2.18%</td><td class="r">153</td><td class="r">0.321%</td><td class="r">0.512%</td><td class="r">11.82%</td><td class="r">46</td><td class="r">0.0964%</td><td class="r">30.07%</td></tr>
+    <tr class="anchor"><td>June 2026</td><td class="r">66,457<div class="mom mom-up">▲ 0.9%</div></td><td class="r">47,658</td><td class="r">124,231</td><td class="r">15.31%</td><td class="r">1,762</td><td class="r">2.65%</td><td class="r">2.14%</td><td class="r">246<div class="mom mom-up">▲ 72.0%</div></td><td class="r">0.370%</td><td class="r">0.516%</td><td class="r">13.96%</td><td class="r">77<div class="mom mom-up">▲ 75.0%</div></td><td class="r">0.1159%<div class="mom mom-up">▲ 73.5%</div></td><td class="r">31.30%</td></tr>
+    <tr><td>May 2026</td><td class="r">65,878<div class="mom mom-down">▼ 30.1%</div></td><td class="r">48,565</td><td class="r">144,762</td><td class="r">8.30%</td><td class="r">2,026</td><td class="r">3.08%</td><td class="r">2.45%</td><td class="r">143<div class="mom mom-down">▼ 31.2%</div></td><td class="r">0.217%</td><td class="r">0.294%</td><td class="r">7.06%</td><td class="r">44<div class="mom mom-down">▼ 37.1%</div></td><td class="r">0.0668%<div class="mom mom-down">▼ 10.1%</div></td><td class="r">30.77%</td></tr>
+    <tr><td>April 2026</td><td class="r">94,249</td><td class="r">66,812</td><td class="r">196,120</td><td class="r">10.95%</td><td class="r">2,140</td><td class="r">2.27%</td><td class="r">1.87%</td><td class="r">208</td><td class="r">0.221%</td><td class="r">0.311%</td><td class="r">9.72%</td><td class="r">70</td><td class="r">0.0743%</td><td class="r">33.65%</td></tr>
+    </tbody></table>
+  </div>
+  <div class="tablewrap" id="mom-coh" style="display:none;">
+    <table><thead><tr><th>Month</th><th class="r">Prospects</th><th class="r">Unique</th><th class="r">Emails</th><th class="r">Bounce</th><th class="r">Gen Replies</th><th class="r">Gen RR</th><th class="r">E1 RR</th><th class="r">Pos Replies</th><th class="r">Pos RR</th><th class="r">Pos RR (uniq)</th><th class="r">Reply→Pos</th><th class="r">Meetings</th><th class="r">Booking</th><th class="r">Pos→Book</th></tr></thead>
+    <tbody>
+    <tr><td>July 2026<span class="partial-tag">partial</span></td><td class="r">47,710</td><td class="r">29,890</td><td class="r">76,681</td><td class="r">3.33%</td><td class="r">1,268</td><td class="r">2.66%</td><td class="r">2.16%</td><td class="r">141</td><td class="r">0.296%</td><td class="r">0.472%</td><td class="r">11.12%</td><td class="r">38</td><td class="r">0.0796%</td><td class="r">26.95%</td></tr>
+    <tr class="anchor"><td>June 2026</td><td class="r">66,457<div class="mom mom-up">▲ 0.9%</div></td><td class="r">47,658</td><td class="r">118,792</td><td class="r">15.20%</td><td class="r">1,733</td><td class="r">2.61%</td><td class="r">2.12%</td><td class="r">249<div class="mom mom-up">▲ 141.7%</div></td><td class="r">0.375%</td><td class="r">0.522%</td><td class="r">14.37%</td><td class="r">76<div class="mom mom-up">▲ 105.4%</div></td><td class="r">0.1144%<div class="mom mom-up">▲ 103.6%</div></td><td class="r">30.52%</td></tr>
+    <tr><td>May 2026</td><td class="r">65,878<div class="mom mom-down">▼ 30.1%</div></td><td class="r">48,565</td><td class="r">132,741</td><td class="r">8.22%</td><td class="r">1,919</td><td class="r">2.91%</td><td class="r">2.43%</td><td class="r">103<div class="mom mom-up">▲ 692.3%</div></td><td class="r">0.156%</td><td class="r">0.212%</td><td class="r">5.37%</td><td class="r">37<div class="mom mom-up">▲ 640.0%</div></td><td class="r">0.0562%<div class="mom mom-up">▲ 958.7%</div></td><td class="r">35.92%</td></tr>
+    <tr><td>April 2026</td><td class="r">94,249</td><td class="r">66,812</td><td class="r">203,206</td><td class="r">11.06%</td><td class="r">2,225</td><td class="r">2.36%</td><td class="r">1.87%</td><td class="r">13</td><td class="r">0.014%</td><td class="r">0.019%</td><td class="r">0.58%</td><td class="r">5</td><td class="r">0.0053%</td><td class="r">38.46%</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- FUNNEL DIAGNOSTIC -->
+<div class="card">
+  <h2>Funnel Diagnostic &mdash; June 2026 (last complete month) vs May 2026</h2>
+  <div class="toggle-group" id="fun-toggle">
+    <button class="toggle-btn active" onclick="funMode('act',this)">Activity</button>
+    <button class="toggle-btn" onclick="funMode('coh',this)">Cohort</button>
+  </div>
+<div class="funnel-diag" id="funnel-act" style="">
+  <div class="funnel-box funnel-green">
+    <div class="step-name">Prospects Reached</div>
+    <div class="step-value">66,457</div>
+    <div class="step-compare">May: 65,878 &middot; +0.9%</div>
+    <div class="step-status">ABOVE</div>
+  </div>
+  <div class="funnel-arrow">&darr;</div>
+  <div class="funnel-box funnel-amber">
+    <div class="step-name">Emails Delivered · Gen Reply Rate</div>
+    <div class="step-value">2.65%</div>
+    <div class="step-compare">May: 3.08% &middot; -13.8%</div>
+    <div class="step-status">WATCH</div>
+  </div>
+  <div class="funnel-arrow">&darr;</div>
+  <div class="funnel-box funnel-green">
+    <div class="step-name">Positive Replies · Pos Reply Rate</div>
+    <div class="step-value">0.370%</div>
+    <div class="step-compare">May: 0.217% &middot; +70.5%</div>
+    <div class="step-status">ABOVE</div>
+  </div>
+  <div class="funnel-arrow">&darr;<span class="pos-book">Pos→Book: Jun 31.30% &middot; May 30.77%</span></div>
+  <div class="funnel-box funnel-green">
+    <div class="step-name">Meetings · Booking Rate</div>
+    <div class="step-value">0.1159%</div>
+    <div class="step-compare">May: 0.0668% &middot; +73.5%</div>
+    <div class="step-status">ABOVE</div>
+  </div>
+</div>
+<div class="funnel-diag" id="funnel-coh" style="display:none;">
+  <div class="funnel-box funnel-green">
+    <div class="step-name">Prospects Reached</div>
+    <div class="step-value">66,457</div>
+    <div class="step-compare">May: 65,878 &middot; +0.9%</div>
+    <div class="step-status">ABOVE</div>
+  </div>
+  <div class="funnel-arrow">&darr;</div>
+  <div class="funnel-box funnel-amber">
+    <div class="step-name">Emails Delivered · Gen Reply Rate</div>
+    <div class="step-value">2.61%</div>
+    <div class="step-compare">May: 2.91% &middot; -10.5%</div>
+    <div class="step-status">WATCH</div>
+  </div>
+  <div class="funnel-arrow">&darr;</div>
+  <div class="funnel-box funnel-green">
+    <div class="step-name">Positive Replies · Pos Reply Rate</div>
+    <div class="step-value">0.375%</div>
+    <div class="step-compare">May: 0.156% &middot; +139.6%</div>
+    <div class="step-status">ABOVE</div>
+  </div>
+  <div class="funnel-arrow">&darr;<span class="pos-book">Pos→Book: Jun 30.52% &middot; May 35.92%</span></div>
+  <div class="funnel-box funnel-green">
+    <div class="step-name">Meetings · Booking Rate</div>
+    <div class="step-value">0.1144%</div>
+    <div class="step-compare">May: 0.0562% &middot; +103.6%</div>
+    <div class="step-status">ABOVE</div>
+  </div>
+</div>
+</div>
+
+<!-- PLACEHOLDER: section from the other agent -->
+<div class="card">
+  <h2>Series Performance <span class="partial-tag">pending</span></h2>
+  <div class="placeholder">Reserved for the additional monthly section (in progress). Slots in here when ready.</div>
+</div>
+
+<div class="footer">MerchantBots Monthly Analytics &middot; MerchantBots clients (108917, 82914, 51431, 33748) &middot; April row adjusted for Mr. Prime pre-transition volume (Apr 1&ndash;14)</div>
+
+<script>
+function momMode(m,btn){
+  document.getElementById('mom-act').style.display = m==='act'?'block':'none';
+  document.getElementById('mom-coh').style.display = m==='coh'?'block':'none';
+  document.querySelectorAll('#mom-toggle .toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function funMode(m,btn){
+  document.getElementById('funnel-act').style.display = m==='act'?'flex':'none';
+  document.getElementById('funnel-coh').style.display = m==='coh'?'flex':'none';
+  document.querySelectorAll('#fun-toggle .toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
