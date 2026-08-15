@@ -76,7 +76,9 @@ DTC Retail (82914) and Equal Collective (108917) have always been MerchantBots �
 
 ## Goals
 
-- **MerchantBots: 30 meetings/week and 100 positive replies/week.** These are the primary goals. Goal pacing banner always shows both.
+- **MerchantBots weekly: 30 meetings/week and 100 positive replies/week.** Primary goals.
+- **MerchantBots monthly: 120 meetings/month and 400 positive replies/month.** Primary goals.
+- The goal pacing banner always shows all four, as a single row of four tiles (weekly pair, then monthly pair).
 - **Jeff clients: 3 meetings/week per client** (9 total across 3 clients). Secondary tracking in the Jeff Clients tab.
 
 ## MCP tools available
@@ -160,17 +162,29 @@ When the user says "show analytics" or similar vague requests, run the queries d
 Each section below defines exactly what to query and how to display it. When building or updating the dashboard, follow these specs precisely.
 
 #### Section 1: Goal Pacing Banner (always visible at top, MerchantBots only)
-- **Query**:
+- **Query (weekly row)**:
   - Metrics: `crm_meetings_booked,crm_positive_replies`
   - Granularity: `daily`
   - Client IDs: `108917,82914,51431,33748`
   - Dates: current week Monday through today
   - Date mode: `activity`
+- **Query (monthly row)**: same metrics, client IDs, and date mode; dates are the **1st of the current month through today**. Granularity `all` (a single summed row) — do not reuse the weekly query's data, the windows differ.
 - **Display**:
-  - Two large numbers side by side: **Meetings This Week** and **Positive Replies This Week** (sum across all days returned)
-  - Progress bar under meetings showing progress toward 30/week goal
-  - Progress bar under positive replies showing progress toward 100/week goal
-  - Status badge on each: ahead (green) / on pace (amber) / behind (red) based on where the count stands relative to the day of the week
+  - **Single row of four tiles**, left to right, in this order: **Meetings This Week**, **Pos. Replies This Week**, **Meetings This Month**, **Pos. Replies This Month**. Weekly pair first, monthly pair second. CSS: `grid-template-columns: repeat(4, 1fr)`, `gap: 28px`.
+  - Headings on the positive-reply tiles are abbreviated to **"Pos. Replies"** — the full "Positive Replies This Month" wraps at quarter width.
+  - Value type is **34px** in this layout (down from the 42px of the two-tile banner) so four values fit one row without wrapping. All four tiles use identical type sizes.
+  - **Responsive fallback**: below 1000px viewport width, reflow to `repeat(2, 1fr)` — weekly pair on the top row, monthly pair below. Four tiles at quarter width become unreadable on a laptop.
+  - Each tile: the count, a `of N goal` label, a progress bar toward that goal, and a status badge.
+  - Goals: 30 meetings/week · 100 positive replies/week · 120 meetings/month · 400 positive replies/month.
+  - **Badges are abbreviated in this layout** to fit quarter-width tiles: `N% · BEHIND`, `N% · ON PACE`, `N% · AHEAD`. (The full `N% OF GOAL · BEHIND PACE` form does not fit.)
+  - **Monthly tiles carry a sending-day denominator** in the goal label: `of 120 goal · day X/Y`. Sending days = weekdays (Mon–Fri) only, since no sending happens on weekends. Y = weekdays in the full month; X = weekdays from the 1st through today inclusive. Without this the monthly bar is unreadable mid-month. Weekly tiles keep the plain `of N goal` label.
+  - **Monthly pace status.** Compute `ratio = (count / goal) / (sending days elapsed / sending days in month)`, then:
+    - `ratio >= 1.10` → green, `N% · AHEAD`
+    - `0.95 <= ratio < 1.10` → green, `N% · ON PACE`
+    - `0.80 <= ratio < 0.95` → amber, `N% · BEHIND`
+    - `ratio < 0.80` → red, `N% · BEHIND`
+  - **Weekly pace status** is unchanged: ahead (green) / on pace (amber) / behind (red) based on where the count stands relative to the day of the week.
+  - Progress-fill colour matches the badge colour on every tile (green `#10b981`, amber `#f59e0b`, red `#ef4444`).
 
 #### Section 2: Daily Trend (tab, MerchantBots)
 
